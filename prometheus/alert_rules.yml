@@ -1,0 +1,35 @@
+groups:
+  - name: sre_infrastructure_alerts
+    rules:
+      # 1. CPU > 80% Alert Rule
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[1m])) * 100) > 80
+        for: 10s
+        labels:
+          severity: critical
+          team: sre-devops
+        annotations:
+          summary: "CRITICAL: High CPU Utilization detected on {{ $labels.instance }}"
+          description: "CPU usage has exceeded 80% threshold (Current value: {{ printf \"%.2f\" $value }}%)."
+
+      # 2. Memory > 85% Alert Rule
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 1m
+        labels:
+          severity: warning
+          team: sre-devops
+        annotations:
+          summary: "WARNING: High Memory Consumption on {{ $labels.instance }}"
+          description: "Available memory dropped below 15% (Current usage: {{ printf \"%.2f\" $value }}%)."
+
+      # 3. Target / Service Down Alert Rule
+      - alert: InstanceDown
+        expr: up == 0
+        for: 10s
+        labels:
+          severity: critical
+          team: sre-devops
+        annotations:
+          summary: "CRITICAL: Monitoring Target Down ({{ $labels.job }})"
+          description: "Service {{ $labels.instance }} in job {{ $labels.job }} is unreachable."
